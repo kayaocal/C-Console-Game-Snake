@@ -12,7 +12,6 @@ int main()
 	while(true)
 	{
 		Sleep(SLEEP_TIME);
-		system("cls");
 		switch(game_state)
 		{
 			case MENU_STATE:
@@ -22,7 +21,7 @@ int main()
 			case GAME_STATE:
 				get_key();
 				move_snake();
-				draw_game();
+				merge_snake_to_map();
 			break;
 
 			case GAME_OVER_STATE:
@@ -96,29 +95,13 @@ void reset_game()
 			vec2_set_int(player[i], -1, -1);
 		}
 	}
-	
+
 	direction = vec2_int(1,0);
 
 	score = 0;
 	
+	draw_map();
 	
-}
-
-void draw_game()
-{
-	merge_snake_to_map();
-
-	printf("\n SCORE : %d", score);
-	for(int i = 0; i < MAP_HEIGHT; i++)
-	{
-		printf("\n");
-		for(int j = 0; j < MAP_WIDTH; j++)
-		{
-			printf("%c",map_and_snake[j][i]);
-		}	
-	}
-
-
 	if(game_state ==  GAME_STATE)
 	{
 		printf("\n\nAs an hungry snake, you should eat everything");
@@ -129,20 +112,14 @@ void draw_game()
 	}
 }
 
+
 void merge_snake_to_map()
 {
-	for(int i = 0; i < MAP_HEIGHT; i++)
-	{
-		for(int j = 0; j < MAP_WIDTH; j++)
-		{
-			map_and_snake[j][i] = map[j][i];
-		}	
-	}
-
 	int i = 0;
+
 	while(player[i]->x > 0 && player[i]->y > 0)
 	{
-		map_and_snake[player[i]->x][player[i]->y] = ascii_snake_code;
+		DRAW(player[i]->x, player[i]->y, ascii_snake_code);
 		i++;
 	}
 
@@ -157,12 +134,21 @@ void merge_snake_to_map()
 		{
 			valid = 0;
 			srand(time(NULL)); 
-			x_p = (rand() % ((MAP_WIDTH - 2) + 1 - 2)) +  2; 
-			y_p =  (rand() % ((MAP_HEIGHT - 2) + 1 - 2)) +  2; 
+			x_p = RAND(1,37);
+			y_p =  RAND(1,16);
 			i = 0;
 			
-			if(map_and_snake[y_p][x_p] == ascii_snake_code)
-				valid = -1;
+			
+			while(player[i]->x > 0 && player[i]->y > 0)
+			{
+				if(player[i]->x == x_p && player[i]->y == y_p)
+				{
+					valid = -1;
+					break;
+				}
+				i++;
+			}	
+
 			counter++;
 		}while(valid == -1 && counter < 5);
 
@@ -175,7 +161,11 @@ void merge_snake_to_map()
 	}
 
 	if(bait_pos != NULL && game_state == GAME_STATE)
-		map_and_snake[bait_pos->x][bait_pos->y] = ascii_bait_code;
+		DRAW(bait_pos->x, bait_pos->y, ascii_bait_code);
+
+//		printf("\033[%d;%dH%c",bait_pos->y+2, bait_pos->x, ascii_bait_code);
+
+	hide_cursor();
 }
 
 void hide_cursor()
@@ -189,36 +179,62 @@ void hide_cursor()
 
 void move_snake()
 {
+	int i = 0;
 
-	if(player[0]->x < 1 || player[0]->x >= MAP_WIDTH-1)
+	if(player[0]->x < 1 || player[0]->x >= MAP_WIDTH)
 	{
 		game_over_effect();
 		return;
 	}
-	else if(player[0]->y < 1 || player[0]->y >= MAP_HEIGHT-1)
+	else if(player[0]->y < 1 || player[0]->y >= MAP_HEIGHT-1 )
 	{
 		game_over_effect();
 		return;
+	}
+
+	while(player[i]->x > 0 && player[i]->y > 0)
+	{
+		DRAW(player[i]->x, player[i]->y, ascii_space_code);
+		i++;
 	}
 
 	VEC2_INT* temp =  vec2_int(0,0);	
 	VEC2_INT* temp2 = vec2_int(0,0);	
-	int i = 0;
+	i = 0;
 	
 	vec2_set_int(temp, player[i]->x, player[i]->y);
 	vec2_add_int(player[i], direction);
 	i++;
+
 	
-	if(map_and_snake[player[0]->x][player[0]->y] == ascii_bait_code)
+	if(bait_pos != NULL && bait_pos->x == player[0]->x && bait_pos->y == player[0]->y)
 	{
 		ate_bait();
-	}else if(map_and_snake[player[0]->x][player[0]->y] == ascii_snake_code)
-	{
-		game_over_effect();
-		return;
+
 	}
+	else 
+	{
 
+		int j = 1;
+		int valid = 0;
+				
+		while(player[j]->x > 0 && player[j]->y > 0)
+		{
+			if(player[j]->x == player[0]->x && player[j]->y == player[0]->y)
+			{
+				valid = -1;
+				break;
+			}
+			j++;
+		}	
 
+		if(valid == -1)
+		{
+			game_over_effect();
+			return;
+		}
+
+	}
 
 	while(player[i]->x > 0 && player[i]->y > 0)
 	{
@@ -293,7 +309,9 @@ void draw_game_over()
 
 	 if(key == 13)
 	 {
+
 	 	game_state = GAME_STATE;
+	 	system("cls");
 	 	reset_game();
 	 }
 }
@@ -310,10 +328,11 @@ void draw_snake_art()
 
 void draw_menu()
 {
+	printf("\033[%d;%dH%c",1,1,' ');
 	draw_snake_art();
 	printf("\n");
 	printf("\n");
-	printf("\n \t\tWELCOME TO SNAKE GAME");
+	printf("\n \t WELCOME TO SNAKE GAME");
 	printf("\n \t\tPRESS ENTER TO START GAME");
 	printf("\n \t\tPRESS ESC TO QUIT GAME");
 
@@ -323,11 +342,17 @@ void draw_menu()
 	 if(key == 13)
 	 {
 	 	game_state = GAME_STATE;
+	 	system("cls");
 	 	reset_game();
 	 }else if( key == 27)
 	 {
 	 	game_state = GAME_EXIT_STATE;
 	 }
+}
+
+void draw_game()
+{
+
 }
 
 void game_over_effect()
@@ -341,7 +366,6 @@ void game_over_effect()
 		Sleep(600);
 		system("cls");
 		draw_map();
-		printf("\n UNFORTUNATELY GAME IS OVER :/");
 		Sleep(200);
 		system("cls");
 		i++;
@@ -350,7 +374,7 @@ void game_over_effect()
 
 void draw_map()
 {
-	printf("\n SCORE : %d", score);
+	printf("SCORE : %d", score);
 
 	for(int i = 0; i < MAP_HEIGHT; i++)
 	{

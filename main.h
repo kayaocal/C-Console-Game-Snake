@@ -9,7 +9,7 @@
 #include <conio.h>
 #include <time.h>
 
-#define SLEEP_TIME 10
+#define SLEEP_TIME 100
 #define MAP_WIDTH 40
 #define MAP_HEIGHT 20
 
@@ -23,9 +23,12 @@
 #define LEFT   75
 #define RIGHT  77
 
+#define DRAW(x,y,c) printf("\033[%d;%dH%c",(y+2),x+1,c)
+#define RAND(min, range) rand() % range + min
+
 short ascii_h_line_code = 205;
 short ascii_v_line_code = 186;
-short ascii_space_code  = 255;
+short ascii_space_code  = 32;
 short ascii_snake_code = 219;
 short ascii_bait_code = 248;
 
@@ -45,15 +48,14 @@ int game_state = 0;
 
 void reset_game();
 void draw_menu();
-void draw_game();
 void draw_map();
+void draw_game();
 void draw_game_over();
 void draw_snake_art();
 void move_snake();
 void ate_bait();
 void game_over();
 void game_over_effect();
-
 void hide_cursor();
 void merge_snake_to_map();
 void get_key();
